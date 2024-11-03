@@ -7,6 +7,9 @@ public class Translator {
 
     // Метод для чтения словаря из файла
     public void loadDictionary(String filePath) throws InvalidFileFormatException, FileReadException {
+        if (filePath.isEmpty()) {
+            filePath = "dictionary.txt";
+        }
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -25,6 +28,11 @@ public class Translator {
         }
     }
 
+    // Метод для удаления знаков препинания в конце слова
+    private String removePunctuation(String word) {
+        return word.replaceAll("[.,!?]+$", "");
+    }
+
     // Метод для перевода текста
     public String translate(String text) {
         String[] words = text.split("\\s+"); // Разбиваем текст на слова
@@ -38,7 +46,7 @@ public class Translator {
                 if (i + keyWords.length <= words.length) {
                     boolean match = true;
                     for (int j = 0; j < keyWords.length; j++) {
-                        if (!words[i + j].equalsIgnoreCase(keyWords[j])) {
+                        if (!removePunctuation(words[i + j]).equalsIgnoreCase(keyWords[j])) {
                             match = false;
                             break;
                         }
@@ -46,6 +54,16 @@ public class Translator {
                     if (match && (bestMatch == null || key.length() > bestMatch.length())) {
                         bestMatch = key;
                         bestTranslation = dictionary.get(key);
+
+                        // Восстановление знаков препинания
+                        int startIndex = text.toLowerCase().indexOf(key) + key.length();
+                        int endIndex = text.toLowerCase().indexOf(key) + key.length() + 1;
+                        if (endIndex <= text.length()) {
+                            String substr = text.substring(startIndex, endIndex);
+                            if (!substr.equals(" ")) {
+                                bestTranslation = dictionary.get(key) + substr;
+                            }
+                        }
                     }
                 }
             }
